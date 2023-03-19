@@ -44,10 +44,15 @@ function evaluate(c::Connection, cm2::ComponentModifier, cell::Cell{:python},
         proj = c[:OliveCore].open[Olive.getname(c)]
         mod = proj.open[window][:mod]
         exec = "PyCall.@py_str(\"\"\"$rawcode\"\"\")"
-        if ~(:PyCall in names(mod))
-            exec = "using PyCall; " * exec
+        used = true
+        try
+            getfield(mod, :PyCall)
+        catch
+            used = false
         end
+
         execcode::String = *("begin\n", exec, "\nend\n")
+        println(execcode)
         # get project
         selected::String = cm["olivemain"]["selected"]
         proj::Project{<:Any} = c[:OliveCore].open[Olive.getname(c)]
@@ -57,6 +62,9 @@ function evaluate(c::Connection, cm2::ComponentModifier, cell::Cell{:python},
         standard_out::String = ""
         redirect_stdio(stdout = p, stderr = err) do
             try
+                if used == false
+                    mod.evalin(Meta.parse("using PyCall"))
+                end
                 ret = mod.evalin(Meta.parse(execcode))
             catch e
                 ret = e
