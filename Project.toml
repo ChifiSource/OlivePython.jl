@@ -1,0 +1,10 @@
+name = "OlivePy"
+uuid = "723e633f-9a76-4329-b2d1-0431e20a66c6"
+authors = ["emmac <emmettgb@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+Olive = "724ecaf6-c7a0-4c22-b37e-0bb7b4193da8"
+PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
+ToolipsDefaults = "1710be6b-e895-498d-ba35-e3ff0dac7995"
+ToolipsSession = "2fe55384-55bc-4df3-9d59-c817d405cd05"
