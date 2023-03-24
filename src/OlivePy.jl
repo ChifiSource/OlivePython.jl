@@ -41,8 +41,8 @@ function evaluate(c::Connection, cm2::ComponentModifier, cell::Cell{:python},
     script!(c, cm2, "$(cell.id)eval") do cm::ComponentModifier
         # get code
         rawcode::String = cm["cell$(cell.id)"]["text"]
-        proj = c[:OliveCore].open[Olive.getname(c)]
-        mod = proj.open[window][:mod]
+        proj::Project{<:Any} = c[:OliveCore].open[Olive.getname(c)][window]
+        mod = proj[:mod]
         exec = "PyCall.@py_str(\"\"\"$rawcode\"\"\")"
         used = true
         try
@@ -50,12 +50,9 @@ function evaluate(c::Connection, cm2::ComponentModifier, cell::Cell{:python},
         catch
             used = false
         end
-
         execcode::String = *("begin\n", exec, "\nend\n")
-        println(execcode)
         # get project
         selected::String = cm["olivemain"]["selected"]
-        proj::Project{<:Any} = c[:OliveCore].open[Olive.getname(c)]
         ret::Any = ""
         p = Pipe()
         err = Pipe()
