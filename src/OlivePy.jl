@@ -6,6 +6,7 @@ using Olive.ToolipsDefaults
 using Olive.ToolipsMarkdown
 using PyCall
 import Olive: build, evaluate, cell_highlight!
+import Base: string
 using Olive: Project, Directory
 
 function build(c::Connection, cm::ComponentModifier, cell::Cell{:python},
@@ -159,6 +160,19 @@ function build(c::Connection, cell::Cell{:py},
         end
     end
     filecell
+end
+
+function py_string(c::Cell{:python})
+    c.source
+end
+
+function string(c::Cell{:python})
+    """py\"\"\"$(c.source)\"\"\"
+    #==output[python]
+    $(c.outputs)
+    ==#
+    #==|||==#
+    """
 end
 
 end # module
