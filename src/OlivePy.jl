@@ -10,12 +10,12 @@ import Base: string
 using Olive: Project, Directory
 
 function build(c::Connection, cm::ComponentModifier, cell::Cell{:python},
-    cells::Vector{Cell}, windowname::String)
+    cells::Vector{Cell}, proj::Project{<:Any})
     tm = ToolipsMarkdown.TextStyleModifier(cell.source)
     python_block!(tm)
     builtcell::Component{:div} = Olive.build_base_cell(c, cm, cell, cells,
-    windowname, sidebox = true, highlight = true)
-    km = Olive.cell_bind!(c, cell, cells, windowname)
+    proj, sidebox = true, highlight = true)
+    km = Olive.cell_bind!(c, cell, cells, proj)
     interior = builtcell[:children]["cellinterior$(cell.id)"]
     sideb = interior[:children]["cellside$(cell.id)"]
     style!(sideb, "background-color" => "green")
@@ -26,14 +26,14 @@ function build(c::Connection, cm::ComponentModifier, cell::Cell{:python},
 end
 
 function evaluate(c::Connection, cm2::ComponentModifier, cell::Cell{:python},
-    cells::Vector{Cell}, window::String)
+    cells::Vector{Cell}, proj::Project{<:Any})
     icon = Olive.olive_loadicon()
     cell_drag = Olive.topbar_icon("cell$(cell.id)drag", "drag_indicator")
     cell_run = Olive.topbar_icon("cell$(cell.id)drag", "play_arrow")
     style!(cell_drag, "color" => "white", "font-size" => 17pt)
     style!(cell_run, "color" => "white", "font-size" => 17pt)
     on(c, cell_run, "click") do cm2::ComponentModifier
-        evaluate(c, cm2, cell, cells, window)
+        evaluate(c, cm2, cell, cells, proj)
     end
     icon.name = "load$(cell.id)"
     icon["width"] = "20"
@@ -41,8 +41,7 @@ function evaluate(c::Connection, cm2::ComponentModifier, cell::Cell{:python},
     set_children!(cm2, "cellside$(cell.id)", [icon])
     script!(c, cm2, "$(cell.id)eval") do cm::ComponentModifier
         # get code
-        rawcode::String = cm["cell$(cell.id)"]["text"]
-        proj::Project{<:Any} = c[:OliveCore].open[Olive.getname(c)][window]
+        rawcode::String = cm["cell$(cell.id)"]["text"]]
         mod = proj[:mod]
         exec = "PyCall.@py_str(\"\"\"$rawcode\"\"\")"
         used = true
@@ -92,7 +91,7 @@ function evaluate(c::Connection, cm2::ComponentModifier, cell::Cell{:python},
         if pos == length(cells)
             new_cell = Cell(length(cells) + 1, "python", "")
             push!(cells, new_cell)
-            append!(cm, window, build(c, cm, new_cell, cells, window))
+            append!(cm, proj.id, build(c, cm, new_cell, cells, proj))
             focus!(cm, "cell$(new_cell.id)")
             return
         else
@@ -102,7 +101,7 @@ function evaluate(c::Connection, cm2::ComponentModifier, cell::Cell{:python},
 end
 
 function cell_highlight!(c::Connection, cm::ComponentModifier, cell::Cell{:python},
-    cells::Vector{Cell}, windowname::String)
+    cells::Vector{Cell}, proj::Project{<:Any})
     curr = cm["cell$(cell.id)"]["text"]
     cell.source = curr
     tm = ToolipsMarkdown.TextStyleModifier(cell.source)
@@ -148,18 +147,11 @@ function build(c::Connection, cell::Cell{:py},
     d::Directory{<:Any}; explorer::Bool = false)
     filecell = Olive.build_base_cell(c, cell, d, explorer = explorer)
     style!(filecell, "background-color" => "green", "cursor" => "pointer")
-    if explorer
-        on(c, filecell, "dblclick") do cm::ComponentModifier
-            cs::Vector{Cell{<:Any}} = read_py(cell.outputs)
-            Olive.add_to_session(c, cs, cm, cell.source, cell.outputs)
-        end
-    else
-        on(c, filecell, "dblclick") do cm::ComponentModifier
-            cs::Vector{Cell{<:Any}} = read_py(cell.outputs)
-            Olive.load_session(c, cs, cm, cell.source, cell.outputs, d)
-        end
-    end
     filecell
+end
+
+function py_string(c::Cell{<:Any})
+    c.source
 end
 
 function py_string(c::Cell{:python})
