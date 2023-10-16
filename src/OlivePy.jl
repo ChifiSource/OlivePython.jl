@@ -1,3 +1,13 @@
+"""
+Created in October, 2022 by
+[chifi - an open source software dynasty.](https://github.com/orgs/ChifiSource)
+by team
+[toolips](https://github.com/orgs/ChifiSource/teams/toolips)
+This software is MIT-licensed.
+#### OlivePy
+The OlivePy extension is used to allow `Olive` to edit Python. Editing Python can be done 
+in Julia files via Python cells and in Python files themselves.
+"""
 module OlivePy
 using Olive
 using Olive.Toolips
@@ -8,9 +18,11 @@ using PyCall
 import Olive: build, evaluate, cell_highlight!
 import Base: string
 using Olive: Project, Directory
-
-function build(c::Connection, cm::ComponentModifier, cell::Cell{:python},
-    cells::Vector{Cell}, proj::Project{<:Any})
+#==
+code/none
+==#
+#--
+function build(c::Connection, cm::ComponentModifier, cell::Cell{:python}, proj::Project{<:Any})
     tm = ToolipsMarkdown.TextStyleModifier(cell.source)
     python_block!(tm)
     builtcell::Component{:div} = Olive.build_base_cell(c, cm, cell, cells,
@@ -24,9 +36,11 @@ function build(c::Connection, cm::ComponentModifier, cell::Cell{:python},
     bind!(c, cm, inp[:children]["cell$(cell.id)"], km)
     builtcell::Component{:div}
 end
-
-function evaluate(c::Connection, cm2::ComponentModifier, cell::Cell{:python},
-    cells::Vector{Cell}, proj::Project{<:Any})
+#==
+code/none
+==#
+#--
+function evaluate(c::Connection, cm2::ComponentModifier, cell::Cell{:python}, proj::Project{<:Any})
     icon = Olive.olive_loadicon()
     cell_drag = Olive.topbar_icon("cell$(cell.id)drag", "drag_indicator")
     cell_run = Olive.topbar_icon("cell$(cell.id)drag", "play_arrow")
@@ -99,16 +113,29 @@ function evaluate(c::Connection, cm2::ComponentModifier, cell::Cell{:python},
         end
     end
 end
-
-function cell_highlight!(c::Connection, cm::ComponentModifier, cell::Cell{:python},
-    cells::Vector{Cell}, proj::Project{<:Any})
+#==
+code/none
+==#
+#--
+function cell_highlight!(c::Connection, cm::ComponentModifier, cell::Cell{:python}, proj::Project{<:Any})
     curr = cm["cell$(cell.id)"]["text"]
     cell.source = curr
     tm = ToolipsMarkdown.TextStyleModifier(cell.source)
     python_block!(tm)
     set_text!(cm, "cellhighlight$(cell.id)", string(tm))
 end
-
+#==
+code/none
+==#
+#--
+build(c::Connection, om::OliveModifier, oe::OliveExtension{:python}) = begin
+    hlighters = c[:OliveCore].client_data[getname(c)]["highlighters"]
+    append!(om, "highlighting")
+end
+#==
+code/none
+==#
+#--
 function python_block!(tm::ToolipsMarkdown.TextStyleModifier)
     ToolipsMarkdown.mark_between!(tm, "\"\"\"", :multistring, exclude = "\"\"\"")
     ToolipsMarkdown.mark_between!(tm, "\"", :string)
@@ -126,7 +153,10 @@ function python_block!(tm::ToolipsMarkdown.TextStyleModifier)
     "<br>", "("])
     highlight_python!(tm)
 end
-
+#==
+code/none
+==#
+#--
 function highlight_python!(tm::ToolipsMarkdown.TextStyleModifier)
     style!(tm, :multistring, ["color" => "darkgreen"])
     style!(tm, :string, ["color" => "green"])
@@ -137,34 +167,55 @@ function highlight_python!(tm::ToolipsMarkdown.TextStyleModifier)
     style!(tm, :import, ["color" => "#fc038c"])
     style!(tm, :default, ["color" => "#3D3D3D"])
 end
-
+#==
+code/none
+==#
+#--
 function read_py(uri::String)
     pyd = split(read(uri, String), "\n\n")
     [Cell(e, "python", string(line)) for (e, line) in enumerate(pyd)]
 end
-
+#==
+code/none
+==#
+#--
 function build(c::Connection, cell::Cell{:py},
     d::Directory{<:Any}; explorer::Bool = false)
     filecell = Olive.build_base_cell(c, cell, d, explorer = explorer)
     style!(filecell, "background-color" => "green", "cursor" => "pointer")
     filecell
 end
-
+#==
+code/none
+==#
+#--
 function py_string(c::Cell{<:Any})
     c.source
 end
-
+#==
+code/none
+==#
+#--
 function py_string(c::Cell{:python})
     c.source
 end
-
+#==
+code/none
+==#
+#--
 function string(c::Cell{:python})
     """py\"\"\"$(c.source)\"\"\"
-    #==output[python]
+    #==out""" * """put[python]
     $(c.outputs)
     ==#
-    #==|||==#
-    """
+    #==||""" * "|==#"
+    
 end
-
+#==
+code/none
+==#
+#--
 end # module
+#==output[module]
+==#
+#==|||==#
