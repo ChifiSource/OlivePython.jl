@@ -133,7 +133,7 @@ build(c::Connection, om::OliveModifier, oe::OliveExtension{:python}) = begin
     if ~("python" in keys(hlighters))
         tm = ToolipsMarkdown.TextStyleModifier("")
         highlight_python!(tm)
-        push!(hlighters, tm)
+        push!(hlighters, "python" => tm)
         push!(c[:OliveCore].client_data[getname(c)]["highlighting"], 
         "python" => Dict{String, String}([string(k) => string(v[1][2]) for (k, v) in tm.styles]))
     end
