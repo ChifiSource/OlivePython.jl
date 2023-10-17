@@ -15,7 +15,7 @@ using Olive.ToolipsSession
 using Olive.ToolipsDefaults
 using Olive.ToolipsMarkdown
 using PyCall
-import Olive: build, evaluate, cell_highlight!
+import Olive: build, evaluate, cell_highlight!, getname
 import Base: string
 using Olive: Project, Directory
 #==
