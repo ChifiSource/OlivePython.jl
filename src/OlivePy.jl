@@ -130,7 +130,12 @@ code/none
 #--
 build(c::Connection, om::OliveModifier, oe::OliveExtension{:python}) = begin
     hlighters = c[:OliveCore].client_data[getname(c)]["highlighters"]
-    append!(om, "highlighting")
+    if ~("python" in keys(hlighters))
+    py_highlighter = ToolipsMarkdown.TextStyleModifier("")
+    highlight_python!(tm)
+    push!(hlighters, py_highlighter)
+    push!(c[:OliveCore].client_data[getname(c)]["highlighting"], 
+    "python" => Dict{String, String}([string(k) => string(v[1][2]) for (k, v) in tm.styles]))
 end
 #==
 code/none
