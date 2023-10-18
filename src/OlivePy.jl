@@ -15,7 +15,7 @@ using Olive.ToolipsSession
 using Olive.ToolipsDefaults
 using Olive.ToolipsMarkdown
 using PyCall
-import Olive: build, evaluate, cell_highlight!, getname
+import Olive: build, evaluate, cell_highlight!, getname, olive_save
 import Base: string
 using Olive: Project, Directory
 #==
@@ -25,9 +25,9 @@ code/none
 function build(c::Connection, cm::ComponentModifier, cell::Cell{:python}, proj::Project{<:Any})
     tm = ToolipsMarkdown.TextStyleModifier(cell.source)
     python_block!(tm)
-    builtcell::Component{:div} = Olive.build_base_cell(c, cm, cell, cells,
+    builtcell::Component{:div} = Olive.build_base_cell(c, cm, cell,
     proj, sidebox = true, highlight = true)
-    km = Olive.cell_bind!(c, cell, cells, proj)
+    km = Olive.cell_bind!(c, cell, proj)
     interior = builtcell[:children]["cellinterior$(cell.id)"]
     sideb = interior[:children]["cellside$(cell.id)"]
     style!(sideb, "background-color" => "green")
@@ -118,11 +118,12 @@ code/none
 ==#
 #--
 function cell_highlight!(c::Connection, cm::ComponentModifier, cell::Cell{:python}, proj::Project{<:Any})
-    curr = cm["cell$(cell.id)"]["text"]
-    cell.source = curr
-    tm = ToolipsMarkdown.TextStyleModifier(cell.source)
+    cell.source = cm["cell$(cell.id)"]["text"]
+    tm = hlighters = c[:OliveCore].client_data[getname(c)]["highlighters"]["python"]
+    tm.raw = cell.source
     python_block!(tm)
     set_text!(cm, "cellhighlight$(cell.id)", string(tm))
+    ToolipsMarkdown.clear!(tm)
 end
 #==
 code/none
@@ -142,8 +143,8 @@ end
 code/none
 ==#
 #--
-function python_block!(tm::ToolipsMarkdown.TextStyleModifier)
-    ToolipsMarkdown.mark_between!(tm, "\"\"\"", :multistring, exclude = "\"\"\"")
+function mark_python!(tm::ToolipsMarkdown.TextStyleModifier)
+    ToolipsMarkdown.mark_between!(tm, "\"\"\"", :multistring)
     ToolipsMarkdown.mark_between!(tm, "\"", :string)
     ToolipsMarkdown.mark_all!(tm, "def", :func)
     [ToolipsMarkdown.mark_all!(tm, string(dig), :number) for dig in digits(1234567890)]
@@ -157,7 +158,6 @@ function python_block!(tm::ToolipsMarkdown.TextStyleModifier)
     ToolipsMarkdown.mark_all!(tm, "else ", :if)
     ToolipsMarkdown.mark_before!(tm, "(", :funcn, until = [" ", "\n", ",", ".", "\"", "&nbsp;",
     "<br>", "("])
-    highlight_python!(tm)
 end
 #==
 code/none
@@ -188,6 +188,10 @@ code/none
 function build(c::Connection, cell::Cell{:py},
     d::Directory{<:Any}; explorer::Bool = false)
     filecell = Olive.build_base_cell(c, cell, d, explorer = explorer)
+    on(c, filecell, "dblclick") do cm::ComponentModifier
+        cs = read_py(cell.outputs)
+        add_to_session(c, cs, cm, cell.source, cell.outputs)
+    end
     style!(filecell, "background-color" => "green", "cursor" => "pointer")
     filecell
 end
@@ -196,7 +200,7 @@ code/none
 ==#
 #--
 function py_string(c::Cell{<:Any})
-    c.source
+    ""
 end
 #==
 code/none
@@ -216,6 +220,17 @@ function string(c::Cell{:python})
     ==#
     #==||""" * "|==#"
     
+end
+#==
+code/none
+==#
+#--
+function olive_save(cells::Vector{<:IPyCells.AbstractCell}, p::Project{<:Any}, 
+    pe::ProjectExport{:py})
+    open(p.data[:path], "w") do o::IO
+        write(o, join([py_string(c) for c in p.data[:cells]], "\n\n")
+    end
+    nothing
 end
 #==
 code/none
