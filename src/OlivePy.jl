@@ -1,5 +1,5 @@
 """
-Created in October, 2022 by
+Created in October, 2023 by
 [chifi - an open source software dynasty.](https://github.com/orgs/ChifiSource)
 by team
 [toolips](https://github.com/orgs/ChifiSource/teams/toolips)
@@ -14,8 +14,9 @@ using Olive.Toolips
 using Olive.ToolipsSession
 using Olive.ToolipsDefaults
 using Olive.ToolipsMarkdown
+using Olive.IPyCells
 using PyCall
-import Olive: build, evaluate, cell_highlight!, getname, olive_save
+import Olive: build, evaluate, cell_highlight!, getname, olive_save, ProjectExport
 import Base: string
 using Olive: Project, Directory
 #==
@@ -23,8 +24,8 @@ code/none
 ==#
 #--
 function build(c::Connection, cm::ComponentModifier, cell::Cell{:python}, proj::Project{<:Any})
-    tm = ToolipsMarkdown.TextStyleModifier(cell.source)
-    python_block!(tm)
+    tm = c[:OliveCore].client_data[getname(c)]["highlighters"]["python"]
+    mark_python!(tm)
     builtcell::Component{:div} = Olive.build_base_cell(c, cm, cell,
     proj, sidebox = true, highlight = true)
     km = Olive.cell_bind!(c, cell, proj)
@@ -41,6 +42,7 @@ code/none
 ==#
 #--
 function evaluate(c::Connection, cm2::ComponentModifier, cell::Cell{:python}, proj::Project{<:Any})
+    cells = proj[:cells]
     icon = Olive.olive_loadicon()
     cell_drag = Olive.topbar_icon("cell$(cell.id)drag", "drag_indicator")
     cell_run = Olive.topbar_icon("cell$(cell.id)drag", "play_arrow")
@@ -66,7 +68,6 @@ function evaluate(c::Connection, cm2::ComponentModifier, cell::Cell{:python}, pr
         end
         execcode::String = *("begin\n", exec, "\nend\n")
         # get project
-        selected::String = cm["olivemain"]["selected"]
         ret::Any = ""
         p = Pipe()
         err = Pipe()
@@ -119,9 +120,9 @@ code/none
 #--
 function cell_highlight!(c::Connection, cm::ComponentModifier, cell::Cell{:python}, proj::Project{<:Any})
     cell.source = cm["cell$(cell.id)"]["text"]
-    tm = hlighters = c[:OliveCore].client_data[getname(c)]["highlighters"]["python"]
+    tm = c[:OliveCore].client_data[getname(c)]["highlighters"]["python"]
     tm.raw = cell.source
-    python_block!(tm)
+    mark_python!(tm)
     set_text!(cm, "cellhighlight$(cell.id)", string(tm))
     ToolipsMarkdown.clear!(tm)
 end
@@ -228,7 +229,7 @@ code/none
 function olive_save(cells::Vector{<:IPyCells.AbstractCell}, p::Project{<:Any}, 
     pe::ProjectExport{:py})
     open(p.data[:path], "w") do o::IO
-        write(o, join([py_string(c) for c in p.data[:cells]], "\n\n")
+        write(o, join([py_string(c) for c in p.data[:cells]], "\n\n"))
     end
     nothing
 end
