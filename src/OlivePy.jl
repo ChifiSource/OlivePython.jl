@@ -56,7 +56,7 @@ function evaluate(c::Connection, cm2::ComponentModifier, cell::Cell{:python}, pr
     icon["width"] = "20"
     remove!(cm2, cell_run)
     set_children!(cm2, "cellside$(cell.id)", [icon])
-    script!(c, cm2, "$(cell.id)eval") do cm::ComponentModifier
+    script!(c, cm2, "$(cell.id)eval", type = "Timeout") do cm::ComponentModifier
         # get code
         rawcode::String = cm["cell$(cell.id)"]["text"]
         mod = proj[:mod]
@@ -107,7 +107,7 @@ function evaluate(c::Connection, cm2::ComponentModifier, cell::Cell{:python}, pr
         if pos == length(cells)
             new_cell = Cell(length(cells) + 1, "python", "")
             push!(cells, new_cell)
-            append!(cm, proj.id, build(c, cm, new_cell, cells, proj))
+            append!(cm, proj.id, build(c, cm, new_cell, proj))
             focus!(cm, "cell$(new_cell.id)")
             return
         else
@@ -188,8 +188,8 @@ code/none
 ==#
 #--
 function build(c::Connection, cell::Cell{:py},
-    d::Directory{<:Any}; explorer::Bool = false)
-    filecell = Olive.build_base_cell(c, cell, d, explorer = explorer)
+    d::Directory{<:Any})
+    filecell = Olive.build_base_cell(c, cell, d)
     on(c, filecell, "dblclick") do cm::ComponentModifier
         cs = read_py(cell.outputs)
         add_to_session(c, cs, cm, cell.source, cell.outputs)
