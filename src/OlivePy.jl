@@ -50,6 +50,7 @@ function evaluate(c::Connection, cm::ComponentModifier, cell::Cell{:python}, pro
         rawcode::String = replace(cm["cell$(cell.id)"]["text"], "<div>" => "", "<br>" => "\n")
         mod = proj[:mod]
         exec = "PyCall.@py_str(\"\"\"$rawcode\"\"\")"
+        println(exec)
         used = true
         try
             getfield(mod, :PyCall)
@@ -153,12 +154,14 @@ function mark_python!(tm::ToolipsMarkdown.TextStyleModifier)
     ToolipsMarkdown.mark_all!(tm, "def", :func)
     [ToolipsMarkdown.mark_all!(tm, string(dig), :number) for dig in digits(1234567890)]
     ToolipsMarkdown.mark_all!(tm, "True", :number)
-    ToolipsMarkdown.mark_all!(tm, "import ", :import)
+    ToolipsMarkdown.mark_all!(tm, "import", :import)
     ToolipsMarkdown.mark_all!(tm, ":", :number)
     ToolipsMarkdown.mark_all!(tm, "False", :number)
-    ToolipsMarkdown.mark_all!(tm, "elif ", :if)
+    ToolipsMarkdown.mark_all!(tm, "elif", :if)
+    ToolipsMarkdown.mark_all!(tm, "pass", :keyword)
+    ToolipsMarkdown.mark_all!(tm, "as", :keyword)
     ToolipsMarkdown.mark_all!(tm, "if", :if)
-    ToolipsMarkdown.mark_all!(tm, "else ", :if)
+    ToolipsMarkdown.mark_all!(tm, "else", :if)
     ToolipsMarkdown.mark_all!(tm, "del", :keyword)
     ToolipsMarkdown.mark_all!(tm, "in", :keyword)
 
