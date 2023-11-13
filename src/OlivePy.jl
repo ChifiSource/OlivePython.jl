@@ -10,13 +10,14 @@ in Julia files via Python cells and in Python files themselves.
 """
 module OlivePy
 using Olive
+using Olive.Pkg: add
 using Olive.Toolips
 using Olive.ToolipsSession
 using Olive.ToolipsDefaults
 using Olive.ToolipsMarkdown
 using Olive.IPyCells
 using PyCall
-import Olive: build, evaluate, cell_highlight!, getname, olive_save, ProjectExport
+import Olive: build, evaluate, cell_highlight!, getname, olive_save, ProjectExport, olive_read
 import Base: string
 using Olive: Project, Directory
 #==
@@ -43,20 +44,7 @@ code/none
 ==#
 #--
 function evaluate(c::Connection, cm2::ComponentModifier, cell::Cell{:python}, proj::Project{<:Any})
-    cells = proj[:cells]
-    icon = Olive.olive_loadicon()
-    cell_drag = Olive.topbar_icon("cell$(cell.id)drag", "drag_indicator")
-    cell_run = Olive.topbar_icon("cell$(cell.id)drag", "play_arrow")
-    style!(cell_drag, "color" => "white", "font-size" => 17pt)
-    style!(cell_run, "color" => "white", "font-size" => 17pt)
-    on(c, cell_run, "click") do cm2::ComponentModifier
-        evaluate(c, cm2, cell, cells, proj)
-    end
-    icon.name = "load$(cell.id)"
-    icon["width"] = "20"
-    remove!(cm2, cell_run)
-    set_children!(cm2, "cellside$(cell.id)", [icon])
-    script!(c, cm2, "$(cell.id)eval", type = "Timeout") do cm::ComponentModifier
+        cells = proj[:cells]
         # get code
         rawcode::String = cm["cell$(cell.id)"]["text"]
         mod = proj[:mod]
@@ -113,7 +101,6 @@ function evaluate(c::Connection, cm2::ComponentModifier, cell::Cell{:python}, pr
         else
             new_cell = cells[pos + 1]
         end
-    end
 end
 #==
 code/none
@@ -134,6 +121,7 @@ code/none
 build(c::Connection, om::OliveModifier, oe::OliveExtension{:python}) = begin
     hlighters = c[:OliveCore].client_data[getname(c)]["highlighters"]
     if ~("python" in keys(hlighters))
+        Pkg.add("PyCall")
         tm = ToolipsMarkdown.TextStyleModifier("")
         highlight_python!(tm)
         push!(hlighters, "python" => tm)
@@ -190,13 +178,14 @@ code/none
 function build(c::Connection, cell::Cell{:py},
     d::Directory{<:Any})
     filecell = Olive.build_base_cell(c, cell, d)
-    on(c, filecell, "dblclick") do cm::ComponentModifier
-        cs = read_py(cell.outputs)
-        add_to_session(c, cs, cm, cell.source, cell.outputs)
-    end
-    style!(filecell, "background-color" => "green", "cursor" => "pointer")
+    style!(filecell, "background-color" => "green")
     filecell
 end
+
+function olive_read(cell::Cell{:py})
+    read_py(cell.outputs)
+end
+
 #==
 code/none
 ==#
