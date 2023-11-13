@@ -120,12 +120,24 @@ code/none
 #--
 build(c::Connection, om::OliveModifier, oe::OliveExtension{:python}) = begin
     hlighters = c[:OliveCore].client_data[getname(c)]["highlighters"]
-    if ~("python" in keys(hlighters))
+    hlighting = c[:OliveCore].client_data[getname(c)]["highlighting"]
+    if ~("python" in keys(hlighting))
+        c[:Logger].log("loading `PyCall` for `OlivePy` (first start)")
+        add("PyCall")
         tm = ToolipsMarkdown.TextStyleModifier("")
         highlight_python!(tm)
         push!(hlighters, "python" => tm)
-        push!(c[:OliveCore].client_data[getname(c)]["highlighting"], 
+        push!(hlighting, 
         "python" => Dict{String, String}([string(k) => string(v[1][2]) for (k, v) in tm.styles]))
+    end
+    if ~("python" in keys(hlighters))
+        tm = ToolipsMarkdown.TextStyleModifier("")
+        tm.styles = Dict(begin
+            Symbol(k[1]) => ["color" => k[2]]
+        end for k in c[:OliveCore].client_data[getname(c)]["highlighting"]["python"])
+        push!(c[:OliveCore].client_data[getname(c)]["highlighters"], 
+        "python" => tm)
+        
     end
 end
 #==
