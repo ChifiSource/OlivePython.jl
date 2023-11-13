@@ -43,7 +43,7 @@ end
 code/none
 ==#
 #--
-function evaluate(c::Connection, cm2::ComponentModifier, cell::Cell{:python}, proj::Project{<:Any})
+function evaluate(c::Connection, cm::ComponentModifier, cell::Cell{:python}, proj::Project{<:Any})
         cells = proj[:cells]
         # get code
         rawcode::String = cm["cell$(cell.id)"]["text"]
@@ -88,7 +88,6 @@ function evaluate(c::Connection, cm2::ComponentModifier, cell::Cell{:python}, pr
         else
             outp = standard_out
         end
-        set_children!(cm, "cellside$(cell.id)", [cell_drag, br(), cell_run])
         set_text!(cm, "cell$(cell.id)out", outp)
         cell.outputs = outp
         pos = findfirst(lcell -> lcell.id == cell.id, cells)
@@ -110,6 +109,7 @@ function cell_highlight!(c::Connection, cm::ComponentModifier, cell::Cell{:pytho
     cell.source = cm["cell$(cell.id)"]["text"]
     tm = c[:OliveCore].client_data[getname(c)]["highlighters"]["python"]
     tm.raw = cell.source
+    ToolipsMarkdown.set_text!(tm, cell.source)
     mark_python!(tm)
     set_text!(cm, "cellhighlight$(cell.id)", string(tm))
     ToolipsMarkdown.clear!(tm)
@@ -121,7 +121,6 @@ code/none
 build(c::Connection, om::OliveModifier, oe::OliveExtension{:python}) = begin
     hlighters = c[:OliveCore].client_data[getname(c)]["highlighters"]
     if ~("python" in keys(hlighters))
-        Pkg.add("PyCall")
         tm = ToolipsMarkdown.TextStyleModifier("")
         highlight_python!(tm)
         push!(hlighters, "python" => tm)
@@ -136,6 +135,8 @@ code/none
 function mark_python!(tm::ToolipsMarkdown.TextStyleModifier)
     ToolipsMarkdown.mark_between!(tm, "\"\"\"", :multistring)
     ToolipsMarkdown.mark_between!(tm, "\"", :string)
+    ToolipsMarkdown.mark_before!(tm, "(", :funcn, until = [" ", "\n", ",", ".", "\"", "&nbsp;",
+    "<br>", "("])
     ToolipsMarkdown.mark_all!(tm, "def", :func)
     [ToolipsMarkdown.mark_all!(tm, string(dig), :number) for dig in digits(1234567890)]
     ToolipsMarkdown.mark_all!(tm, "True", :number)
@@ -143,11 +144,11 @@ function mark_python!(tm::ToolipsMarkdown.TextStyleModifier)
     ToolipsMarkdown.mark_all!(tm, ":", :number)
     ToolipsMarkdown.mark_all!(tm, "False", :number)
     ToolipsMarkdown.mark_all!(tm, "elif ", :if)
-    ToolipsMarkdown.mark_all!(tm, " if ", :if)
-    ToolipsMarkdown.mark_all!(tm, "if ", :if)
+    ToolipsMarkdown.mark_all!(tm, "if", :if)
     ToolipsMarkdown.mark_all!(tm, "else ", :if)
-    ToolipsMarkdown.mark_before!(tm, "(", :funcn, until = [" ", "\n", ",", ".", "\"", "&nbsp;",
-    "<br>", "("])
+    ToolipsMarkdown.mark_all!(tm, "del", :keyword)
+    ToolipsMarkdown.mark_all!(tm, "in", :keyword)
+
 end
 #==
 code/none
@@ -157,10 +158,11 @@ function highlight_python!(tm::ToolipsMarkdown.TextStyleModifier)
     style!(tm, :multistring, ["color" => "darkgreen"])
     style!(tm, :string, ["color" => "green"])
     style!(tm, :func, ["color" => "#fc038c"])
-    style!(tm, :funcn, ["color" => "red"])
+    style!(tm, :funcn, ["color" => "#8b0000"])
     style!(tm, :if, ["color" => "#fc038c"])
     style!(tm, :number, ["color" => "#8b0000"])
     style!(tm, :import, ["color" => "#fc038c"])
+    style!(tm, :keyword, ["color" => "#fc038c"])
     style!(tm, :default, ["color" => "#3D3D3D"])
 end
 #==
