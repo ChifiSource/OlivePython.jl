@@ -27,6 +27,7 @@ code/none
 function build(c::Connection, cm::ComponentModifier, cell::Cell{:python}, proj::Project{<:Any})
     tm = c[:OliveCore].client_data[getname(c)]["highlighters"]["python"]
     ToolipsMarkdown.clear!(tm)
+    ToolipsMarkdown.set_text!(tm, cell.source)
     mark_python!(tm)
     builtcell::Component{:div} = Olive.build_base_cell(c, cm, cell,
     proj, sidebox = true, highlight = true)
