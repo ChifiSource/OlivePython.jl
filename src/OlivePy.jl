@@ -46,7 +46,7 @@ code/none
 function evaluate(c::Connection, cm::ComponentModifier, cell::Cell{:python}, proj::Project{<:Any})
         cells = proj[:cells]
         # get code
-        rawcode::String = cm["cell$(cell.id)"]["text"]
+        rawcode::String = replace(cm["cell$(cell.id)"]["text"], "<div>" => "", "<br>" => "\n")
         mod = proj[:mod]
         exec = "PyCall.@py_str(\"\"\"$rawcode\"\"\")"
         used = true
