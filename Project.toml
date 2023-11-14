@@ -1,8 +1,13 @@
 name = "OlivePy"
 uuid = "723e633f-9a76-4329-b2d1-0431e20a66c6"
 authors = ["emmac <emmettgb@gmail.com>"]
-version = "0.1.0"
+version = "0.0.9"
 
 [deps]
 Olive = "724ecaf6-c7a0-4c22-b37e-0bb7b4193da8"
 PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
+
+[compat]
+julia = "1.0"
+Olive = "0.0.9"
+PyCall = "1.96.2"
