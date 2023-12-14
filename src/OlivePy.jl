@@ -8,7 +8,7 @@ This software is MIT-licensed.
 The OlivePy extension is used to allow `Olive` to edit Python. Editing Python can be done 
 in Julia files via Python cells and in Python files themselves.
 """
-module OlivePy
+module OlivePython
 using Olive
 using Olive.Pkg: add
 using Olive.Toolips
