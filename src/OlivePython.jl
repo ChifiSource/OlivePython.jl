@@ -8,7 +8,7 @@ This software is MIT-licensed.
 The OlivePy extension is used to allow `Olive` to edit Python. Editing Python can be done 
 in Julia files via Python cells and in Python files themselves.
 """
-module OlivePy
+module OlivePython
 using Olive
 using Olive.Pkg: add
 using Olive.Toolips
@@ -37,7 +37,7 @@ function build(c::Connection, cm::ComponentModifier, cell::Cell{:python}, proj::
     style!(sideb, "background-color" => "green")
     inp = interior[:children]["cellinput$(cell.id)"]
     inp[:children]["cellhighlight$(cell.id)"][:text] = string(tm)
-    bind!(c, cm, inp[:children]["cell$(cell.id)"], km)
+    bind!(c, cm, inp[:children]["cell$(cell.id)"], km, ["cell$(cell.id)"])
     builtcell::Component{:div}
 end
 #==
@@ -49,7 +49,7 @@ function evaluate(c::Connection, cm::ComponentModifier, cell::Cell{:python}, pro
         # get code
         rawcode::String = replace(cm["cell$(cell.id)"]["text"], "<div>" => "", "<br>" => "\n")
         mod = proj[:mod]
-        exec = "PyCall.@py_str(\"\"\"$rawcode\"\"\")"
+        exec = "PyCall.@py_str(\"\"\"$rawcode\n\"\"\")"
         println(exec)
         used = true
         try
