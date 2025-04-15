@@ -50,7 +50,6 @@ function evaluate(c::Connection, cm::ComponentModifier, cell::Cell{:python}, pro
         rawcode::String = replace(cm["cell$(cell.id)"]["text"], "<div>" => "", "<br>" => "\n")
         mod = proj[:mod]
         exec = "PyCall.@py_str(\"\"\"$rawcode\n\"\"\")"
-        println(exec)
         used = true
         try
             getfield(mod, :PyCall)
@@ -150,10 +149,17 @@ code/none
 #--
 function mark_python!(tm::OliveHighlighters.TextStyleModifier)
     OliveHighlighters.mark_between!(tm, "\"\"\"", :multistring)
+    OliveHighlighters.mark_between!(tm, "'", :string)
     OliveHighlighters.mark_between!(tm, "\"", :string)
+    OliveHighlighters.mark_line_after!(tm, "#", :comment)
+    OliveHighlighters.mark_all!(tm, "return", :from)
     OliveHighlighters.mark_before!(tm, "(", :funcn, until = [" ", "\n", ",", ".", "\"", "&nbsp;",
     "<br>", "("])
     OliveHighlighters.mark_all!(tm, "def", :func)
+    OliveHighlighters.mark_all!(tm, "float", :datatype)
+    OliveHighlighters.mark_all!(tm, "str", :datatype)
+    OliveHighlighters.mark_all!(tm, "int", :datatype)
+    OliveHighlighters.mark_all!(tm, "bool", :datatype)
     [OliveHighlighters.mark_all!(tm, string(dig), :number) for dig in digits(1234567890)]
     OliveHighlighters.mark_all!(tm, "True", :number)
     OliveHighlighters.mark_all!(tm, "import", :import)
@@ -164,17 +170,20 @@ function mark_python!(tm::OliveHighlighters.TextStyleModifier)
     OliveHighlighters.mark_all!(tm, "as", :keyword)
     OliveHighlighters.mark_all!(tm, "if", :if)
     OliveHighlighters.mark_all!(tm, "else", :if)
-    OliveHighlighters.mark_all!(tm, "del", :keyword)
+    OliveHighlighters.mark_all!(tm, "del", :none)
+    OliveHighlighters.mark_all!(tm, "None", :none)
     OliveHighlighters.mark_all!(tm, "in", :keyword)
-
+    OliveHighlighters.mark_all!(tm, "for", :from)
+    OliveHighlighters.mark_all!(tm, "from", :from)
+    OliveHighlighters.mark_all!(tm, "self", :self)
 end
 #==
 code/none
 ==#
 #--
 function highlight_python!(tm::OliveHighlighters.TextStyleModifier)
-    style!(tm, :multistring, ["color" => "darkgreen"])
-    style!(tm, :string, ["color" => "green"])
+    style!(tm, :multistring, ["color" => "#122902"])
+    style!(tm, :string, ["color" => "#3c5e25"])
     style!(tm, :func, ["color" => "#fc038c"])
     style!(tm, :funcn, ["color" => "#8b0000"])
     style!(tm, :if, ["color" => "#fc038c"])
@@ -182,6 +191,10 @@ function highlight_python!(tm::OliveHighlighters.TextStyleModifier)
     style!(tm, :import, ["color" => "#fc038c"])
     style!(tm, :keyword, ["color" => "#fc038c"])
     style!(tm, :default, ["color" => "#3D3D3D"])
+    style!(tm, :self, ["color" => "#990833"])
+    style!(tm, :from, ["color" => "#220899"])
+    style!(tm, :datatype, ["color" => "#147e8c"])
+    style!(tm, :none, ["color" => "#9e6400"])
 end
 #==
 code/none
