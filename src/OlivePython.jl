@@ -17,9 +17,9 @@ using Olive.Toolips.Components
 using Olive.OliveHighlighters
 using Olive.IPyCells
 using PyCall
-import Olive: build, evaluate, cell_highlight!, getname, olive_save, ProjectExport, olive_read
+import Olive: build, evaluate, cell_highlight!, getname, olive_save, olive_read, get_highlighter
 import Base: string
-using Olive: Project, Directory, Cell, OliveModifier, OliveExtension
+using Olive: Project, Directory, Cell, OliveModifier, OliveExtension, ProjectExport
 #==
 code/none
 ==#
@@ -102,6 +102,11 @@ function evaluate(c::Connection, cm::ComponentModifier, cell::Cell{:python}, pro
             new_cell = cells[pos + 1]
         end
 end
+
+function get_highlighter(c::Connection, cell::Cell{:python})
+    c[:OliveCore].client_data[getname(c)]["highlighters"]["python"]
+end
+
 #==
 code/none
 ==#
@@ -110,7 +115,6 @@ function cell_highlight!(c::Connection, cm::ComponentModifier, cell::Cell{:pytho
     cell.source = cm["cell$(cell.id)"]["text"]
     tm = c[:OliveCore].client_data[getname(c)]["highlighters"]["python"]
     tm.raw = cell.source
-    OliveHighlighters.set_text!(tm, cell.source)
     mark_python!(tm)
     set_text!(cm, "cellhighlight$(cell.id)", string(tm))
     OliveHighlighters.clear!(tm)
@@ -249,7 +253,7 @@ end
 code/none
 ==#
 #--
-function olive_save(cells::Vector{<:IPyCells.AbstractCell}, p::Project{<:Any}, 
+function olive_save(p::Project{<:Any}, 
     pe::ProjectExport{:py})
     open(p.data[:path], "w") do o::IO
         write(o, join([py_string(c) for c in p.data[:cells]], "\n\n"))
