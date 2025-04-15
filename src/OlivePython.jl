@@ -59,23 +59,21 @@ function evaluate(c::Connection, cm::ComponentModifier, cell::Cell{:python}, pro
         execcode::String = *("begin\n", exec, "\nend\n")
         # get project
         ret::Any = ""
-        p = Pipe()
-        err = Pipe()
-        standard_out::String = ""
-        redirect_stdio(stdout = p, stderr = err) do
-            try
-                if used == false
+        try
+            if used == false
+                try
+                    mod.evalin(Meta.parse("using PyCall"))
+                catch
+                    Olive.Pkg.activate(Olive.CORE.data["home"])
                     mod.evalin(Meta.parse("using PyCall"))
                 end
-                ret = mod.evalin(Meta.parse(execcode))
-            catch e
-                ret = e
             end
+            ret = mod.evalin(Meta.parse(execcode))
+        catch e
+            ret = e
         end
-        close(err)
-        close(Base.pipe_writer(p))
-        standard_out = replace(read(p, String), "\n" => "<br>")
         outp::String = ""
+        standard_out::String = proj[:mod].STDO
         od = Olive.OliveDisplay()
         if typeof(ret) <: Exception
             Base.showerror(od.io, ret)
@@ -193,6 +191,7 @@ function mark_python!(tm::OliveHighlighters.TextStyleModifier)
     OliveHighlighters.mark_all!(tm, "in", :keyword)
     OliveHighlighters.mark_all!(tm, "for", :from)
     OliveHighlighters.mark_all!(tm, "from", :from)
+    OliveHighlighters.mark_all!(tm, "class", :class)
     OliveHighlighters.mark_all!(tm, "self", :self)
 end
 #==
@@ -227,6 +226,7 @@ function highlight_python!(tm::OliveHighlighters.TextStyleModifier)
     style!(tm, :from, ["color" => "#220899"])
     style!(tm, :datatype, ["color" => "#147e8c"])
     style!(tm, :none, ["color" => "#9e6400"])
+    style!(tm, :class, ["color" => "#3a107d"])
 end
 #==
 code/none
