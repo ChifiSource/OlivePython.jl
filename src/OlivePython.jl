@@ -13,21 +13,21 @@ using Olive
 using Olive.Pkg: add
 using Olive.Toolips
 using Olive.ToolipsSession
-using Olive.ToolipsDefaults
-using Olive.ToolipsMarkdown
+using Olive.Toolips.Components
+using Olive.OliveHighlighters
 using Olive.IPyCells
 using PyCall
 import Olive: build, evaluate, cell_highlight!, getname, olive_save, ProjectExport, olive_read
 import Base: string
-using Olive: Project, Directory
+using Olive: Project, Directory, Cell, OliveModifier, OliveExtension
 #==
 code/none
 ==#
 #--
 function build(c::Connection, cm::ComponentModifier, cell::Cell{:python}, proj::Project{<:Any})
     tm = c[:OliveCore].client_data[getname(c)]["highlighters"]["python"]
-    ToolipsMarkdown.clear!(tm)
-    ToolipsMarkdown.set_text!(tm, cell.source)
+    OliveHighlighters.clear!(tm)
+    OliveHighlighters.set_text!(tm, cell.source)
     mark_python!(tm)
     builtcell::Component{:div} = Olive.build_base_cell(c, cm, cell,
     proj, sidebox = true, highlight = true)
@@ -111,66 +111,68 @@ function cell_highlight!(c::Connection, cm::ComponentModifier, cell::Cell{:pytho
     cell.source = cm["cell$(cell.id)"]["text"]
     tm = c[:OliveCore].client_data[getname(c)]["highlighters"]["python"]
     tm.raw = cell.source
-    ToolipsMarkdown.set_text!(tm, cell.source)
+    OliveHighlighters.set_text!(tm, cell.source)
     mark_python!(tm)
     set_text!(cm, "cellhighlight$(cell.id)", string(tm))
-    ToolipsMarkdown.clear!(tm)
+    OliveHighlighters.clear!(tm)
 end
 #==
 code/none
 ==#
 #--
 build(c::Connection, om::OliveModifier, oe::OliveExtension{:python}) = begin
-    hlighters = c[:OliveCore].client_data[getname(c)]["highlighters"]
-    hlighting = c[:OliveCore].client_data[getname(c)]["highlighting"]
+    client_data = c[:OliveCore].client_data[getname(c)]
+    if ~("highlighters" in keys(client_data))
+        om2 = OliveModifier("")
+        Olive.load_style_settings(c, om2)
+    end
+    hlighters = client_data["highlighters"]
+    hlighting = client_data["highlighting"]
     if ~("python" in keys(hlighting))
-        c[:Logger].log("loading `PyCall` for `OlivePy` (first start)")
         add("PyCall")
-        tm = ToolipsMarkdown.TextStyleModifier("")
+        tm = OliveHighlighters.TextStyleModifier("")
         highlight_python!(tm)
         push!(hlighters, "python" => tm)
         push!(hlighting, 
         "python" => Dict{String, String}([string(k) => string(v[1][2]) for (k, v) in tm.styles]))
     end
     if ~("python" in keys(hlighters))
-        tm = ToolipsMarkdown.TextStyleModifier("")
+        tm = OliveHighlighters.TextStyleModifier("")
         tm.styles = Dict(begin
             Symbol(k[1]) => ["color" => k[2]]
-        end for k in c[:OliveCore].client_data[getname(c)]["highlighting"]["python"])
-        push!(c[:OliveCore].client_data[getname(c)]["highlighters"], 
-        "python" => tm)
-        
+        end for k in client_data["highlighting"]["python"])
+        push!(client_data["highlighters"], "python" => tm)
     end
 end
 #==
 code/none
 ==#
 #--
-function mark_python!(tm::ToolipsMarkdown.TextStyleModifier)
-    ToolipsMarkdown.mark_between!(tm, "\"\"\"", :multistring)
-    ToolipsMarkdown.mark_between!(tm, "\"", :string)
-    ToolipsMarkdown.mark_before!(tm, "(", :funcn, until = [" ", "\n", ",", ".", "\"", "&nbsp;",
+function mark_python!(tm::OliveHighlighters.TextStyleModifier)
+    OliveHighlighters.mark_between!(tm, "\"\"\"", :multistring)
+    OliveHighlighters.mark_between!(tm, "\"", :string)
+    OliveHighlighters.mark_before!(tm, "(", :funcn, until = [" ", "\n", ",", ".", "\"", "&nbsp;",
     "<br>", "("])
-    ToolipsMarkdown.mark_all!(tm, "def", :func)
-    [ToolipsMarkdown.mark_all!(tm, string(dig), :number) for dig in digits(1234567890)]
-    ToolipsMarkdown.mark_all!(tm, "True", :number)
-    ToolipsMarkdown.mark_all!(tm, "import", :import)
-    ToolipsMarkdown.mark_all!(tm, ":", :number)
-    ToolipsMarkdown.mark_all!(tm, "False", :number)
-    ToolipsMarkdown.mark_all!(tm, "elif", :if)
-    ToolipsMarkdown.mark_all!(tm, "pass", :keyword)
-    ToolipsMarkdown.mark_all!(tm, "as", :keyword)
-    ToolipsMarkdown.mark_all!(tm, "if", :if)
-    ToolipsMarkdown.mark_all!(tm, "else", :if)
-    ToolipsMarkdown.mark_all!(tm, "del", :keyword)
-    ToolipsMarkdown.mark_all!(tm, "in", :keyword)
+    OliveHighlighters.mark_all!(tm, "def", :func)
+    [OliveHighlighters.mark_all!(tm, string(dig), :number) for dig in digits(1234567890)]
+    OliveHighlighters.mark_all!(tm, "True", :number)
+    OliveHighlighters.mark_all!(tm, "import", :import)
+    OliveHighlighters.mark_all!(tm, ":", :number)
+    OliveHighlighters.mark_all!(tm, "False", :number)
+    OliveHighlighters.mark_all!(tm, "elif", :if)
+    OliveHighlighters.mark_all!(tm, "pass", :keyword)
+    OliveHighlighters.mark_all!(tm, "as", :keyword)
+    OliveHighlighters.mark_all!(tm, "if", :if)
+    OliveHighlighters.mark_all!(tm, "else", :if)
+    OliveHighlighters.mark_all!(tm, "del", :keyword)
+    OliveHighlighters.mark_all!(tm, "in", :keyword)
 
 end
 #==
 code/none
 ==#
 #--
-function highlight_python!(tm::ToolipsMarkdown.TextStyleModifier)
+function highlight_python!(tm::OliveHighlighters.TextStyleModifier)
     style!(tm, :multistring, ["color" => "darkgreen"])
     style!(tm, :string, ["color" => "green"])
     style!(tm, :func, ["color" => "#fc038c"])
