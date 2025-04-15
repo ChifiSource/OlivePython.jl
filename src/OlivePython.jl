@@ -37,7 +37,7 @@ function build(c::Connection, cm::ComponentModifier, cell::Cell{:python}, proj::
     style!(sideb, "background-color" => "green")
     inp = interior[:children]["cellinput$(cell.id)"]
     inp[:children]["cellhighlight$(cell.id)"][:text] = string(tm)
-    bind!(c, cm, inp[:children]["cell$(cell.id)"], km, ["cell$(cell.id)"])
+    Components.bind(c, cm, inp[:children]["cell$(cell.id)"], km)
     builtcell::Component{:div}
 end
 #==
@@ -94,7 +94,7 @@ function evaluate(c::Connection, cm::ComponentModifier, cell::Cell{:python}, pro
         cell.outputs = outp
         pos = findfirst(lcell -> lcell.id == cell.id, cells)
         if pos == length(cells)
-            new_cell = Cell(length(cells) + 1, "python", "")
+            new_cell = Cell("python", "")
             push!(cells, new_cell)
             append!(cm, proj.id, build(c, cm, new_cell, proj))
             focus!(cm, "cell$(new_cell.id)")
@@ -189,7 +189,7 @@ code/none
 #--
 function read_py(uri::String)
     pyd = split(read(uri, String), "\n\n")
-    [Cell(e, "python", string(line)) for (e, line) in enumerate(pyd)]
+    [Cell("python", string(line)) for (e, line) in enumerate(pyd)]
 end
 #==
 code/none
