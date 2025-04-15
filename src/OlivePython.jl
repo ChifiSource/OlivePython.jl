@@ -151,6 +151,20 @@ end
 code/none
 ==#
 #--
+"""
+```julia
+mark_python!(tm::OliveHighlighters.TextStyleModifier) -> ::Nothing
+```
+Marks Python code in a `TextStyleModifier`, similar to `mark_julia!` from `OliveHighlighters`.
+```julia
+tm = TextStyleModifier("def sample(x : int):")
+mark_python!(tm)
+highlight_python!(tm)
+
+string(tm)
+```
+- See also: `OlivePython`, `highlight_python!`, `read_py`
+"""
 function mark_python!(tm::OliveHighlighters.TextStyleModifier)
     OliveHighlighters.mark_between!(tm, "\"\"\"", :multistring)
     OliveHighlighters.mark_between!(tm, "'", :string)
@@ -185,6 +199,20 @@ end
 code/none
 ==#
 #--
+"""
+```julia
+highlight_python!(tm::OliveHighlighters.TextStyleModifier) -> ::Nothing
+```
+Highlights Python code in a `TextStyleModifier`.
+```julia
+tm = TextStyleModifier("def sample(x : int):")
+mark_python!(tm)
+highlight_python!(tm)
+
+string(tm)
+```
+- See also: `OlivePython`, `highlight_python!`, `read_py`
+"""
 function highlight_python!(tm::OliveHighlighters.TextStyleModifier)
     style!(tm, :multistring, ["color" => "#122902"])
     style!(tm, :string, ["color" => "#3c5e25"])
@@ -204,9 +232,23 @@ end
 code/none
 ==#
 #--
+"""
+```julia
+read_py(uri::String) -> ::Vector{Cell{<:Any}}
+```
+Reads a `py` file into notebook cells for `Olive`.
+```julia
+tm = TextStyleModifier("def sample(x : int):")
+mark_python!(tm)
+highlight_python!(tm)
+
+string(tm)
+```
+- See also: `OlivePython`, `highlight_python!`, `read_py`, `py_string`
+"""
 function read_py(uri::String)
     pyd = split(read(uri, String), "\n\n")
-    [Cell("python", string(line)) for (e, line) in enumerate(pyd)]
+    Vector{Cell}([Cell("python", string(line)) for (e, line) in enumerate(pyd)])
 end
 #==
 code/none
@@ -227,6 +269,25 @@ end
 code/none
 ==#
 #--
+"""
+```julia
+py_string(c::Cell{<:Any}) -> ::String
+py_string(c::Cell{:python}) -> ::String
+```
+`py_string` turns a given `Cell` into its `Python` version. The `Cell{<:Any}` dispatch will simply return an empty 
+string, removing that cell from the source -- another dispatch could be added to add certain new cell types. 
+This is used for the python `Olive.ProjectExport` (`ProjectExport{:py}`)
+```julia
+function olive_save(p::Project{<:Any}, 
+    pe::ProjectExport{:py})
+    open(p.data[:path], "w") do o::IO
+        write(o, join([py_string(c) for c in p.data[:cells]], "\n\n"))
+    end
+    nothing
+end
+```
+- See also: `read_py`, `py_string`, `OlivePython`, `Olive`
+"""
 function py_string(c::Cell{<:Any})
     ""
 end
