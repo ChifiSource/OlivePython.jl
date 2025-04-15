@@ -1,5 +1,5 @@
 <div align="center">
-<img src="https://github.com/ChifiSource/image_dump/blob/main/olive/olivepy.png" width="250"></img>
+<img src="https://github.com/ChifiSource/image_dump/raw/main/olive/0.1/extensions/olivepython.png" width="250"></img>
   </div>
 
 
