@@ -4,8 +4,8 @@ Created in October, 2023 by
 by team
 [toolips](https://github.com/orgs/ChifiSource/teams/toolips)
 This software is MIT-licensed.
-#### OlivePy
-The OlivePy extension is used to allow `Olive` to edit Python. Editing Python can be done 
+#### OlivePython
+The `OlivePython` extension is used to allow `Olive` to edit Python. Editing Python can be done 
 in Julia files via Python cells and in Python files themselves.
 """
 module OlivePython
