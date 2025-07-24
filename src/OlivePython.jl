@@ -5,7 +5,7 @@ by team
 [toolips](https://github.com/orgs/ChifiSource/teams/toolips)
 This software is MIT-licensed.
 #### OlivePython
-The `OlivePython` extension is used to allow `Olive` to edit Python. Editing Python can be done 
+The `OlivePython` extension allows `Olive` to edit and evaluate Python code! Editing Python can be done 
 in Julia files via Python cells and in Python files themselves.
 """
 module OlivePython
@@ -19,13 +19,13 @@ using Olive.IPyCells
 using PyCall
 import Olive: build, evaluate, cell_highlight!, getname, olive_save, olive_read, get_highlighter
 import Base: string
-using Olive: Project, Directory, Cell, OliveModifier, OliveExtension, ProjectExport
+using Olive: Project, Directory, Cell, ComponentModifier, OliveExtension, ProjectExport
 #==
 code/none
 ==#
 #--
 function build(c::Connection, cm::ComponentModifier, cell::Cell{:python}, proj::Project{<:Any})
-    tm = c[:OliveCore].client_data[getname(c)]["highlighters"]["python"]
+    tm = c[:OliveCore].users[getname(c)]["highlighters"]["python"]
     OliveHighlighters.clear!(tm)
     OliveHighlighters.set_text!(tm, cell.source)
     mark_python!(tm)
@@ -47,6 +47,9 @@ code/none
 function evaluate(c::Connection, cm::ComponentModifier, cell::Cell{:python}, proj::Project{<:Any})
         cells = proj[:cells]
         # get code
+        p = Pipe()
+        err = Pipe()
+        standard_out::String = ""
         rawcode::String = replace(cm["cell$(cell.id)"]["text"], "<div>" => "", "<br>" => "\n")
         mod = proj[:mod]
         exec = "PyCall.@py_str(\"\"\"$rawcode\n\"\"\")"
@@ -57,8 +60,10 @@ function evaluate(c::Connection, cm::ComponentModifier, cell::Cell{:python}, pro
             used = false
         end
         execcode::String = *("begin\n", exec, "\nend\n")
-        # get project
         ret::Any = ""
+        redirect_stdio(stdout = p, stderr = err) do
+            # begin STDIO redirect
+        # get project
         try
             if used == false
                 try
@@ -72,8 +77,11 @@ function evaluate(c::Connection, cm::ComponentModifier, cell::Cell{:python}, pro
         catch e
             ret = e
         end
+        end # STDO redirect
         outp::String = ""
-        standard_out::String = proj[:mod].STDO
+        close(err)
+        close(Base.pipe_writer(p))
+        standard_out = replace(read(p, String), "\n" => "<br>")
         od = Olive.OliveDisplay()
         if typeof(ret) <: Exception
             Base.showerror(od.io, ret)
@@ -102,7 +110,7 @@ function evaluate(c::Connection, cm::ComponentModifier, cell::Cell{:python}, pro
 end
 
 function get_highlighter(c::Connection, cell::Cell{:python})
-    c[:OliveCore].client_data[getname(c)]["highlighters"]["python"]
+    c[:OliveCore].users[getname(c)].data["highlighters"]["python"]
 end
 
 #==
@@ -111,7 +119,7 @@ code/none
 #--
 function cell_highlight!(c::Connection, cm::ComponentModifier, cell::Cell{:python}, proj::Project{<:Any})
     cell.source = cm["cell$(cell.id)"]["text"]
-    tm = c[:OliveCore].client_data[getname(c)]["highlighters"]["python"]
+    tm = c[:OliveCore].users[getname(c)].data["highlighters"]["python"]
     tm.raw = cell.source
     mark_python!(tm)
     set_text!(cm, "cellhighlight$(cell.id)", string(tm))
@@ -121,10 +129,10 @@ end
 code/none
 ==#
 #--
-build(c::Connection, om::OliveModifier, oe::OliveExtension{:python}) = begin
-    client_data = c[:OliveCore].client_data[getname(c)]
+build(c::Connection, om::ComponentModifier, oe::OliveExtension{:python}) = begin
+    client_data = c[:OliveCore].users[getname(c)].data
     if ~("highlighters" in keys(client_data))
-        om2 = OliveModifier("")
+        om2 = ComponentModifier("")
         Olive.load_style_settings(c, om2)
     end
     hlighters = client_data["highlighters"]
@@ -308,7 +316,6 @@ function string(c::Cell{:python})
     $(c.outputs)
     ==#
     #==||""" * "|==#"
-    
 end
 #==
 code/none
