@@ -1,6 +1,6 @@
 name = "OlivePython"
 uuid = "723e633f-9a76-4329-b2d1-0431e20a66c6"
-authors = ["emmac <emmettgb@gmail.com>"]
+authors = ["emmac <emmacboudreau@gmail.com>"]
 version = "0.2"
 
 [deps]
